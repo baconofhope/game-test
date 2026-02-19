@@ -1,0 +1,147 @@
+:root {
+  color-scheme: light dark;
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --text: #e2e8f0;
+  --accent: #38bdf8;
+  --muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: radial-gradient(circle at top, #1e3a8a, var(--bg));
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+.panel {
+  background: color-mix(in oklab, var(--panel) 86%, black);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+label,
+input,
+textarea,
+button,
+select {
+  display: block;
+  width: 100%;
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  margin-top: 0.4rem;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  padding: 0.65rem;
+  background: #0b1220;
+  color: var(--text);
+}
+
+button {
+  margin-top: 0.8rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #06283d;
+  font-weight: 700;
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+button.secondary {
+  width: auto;
+  padding-inline: 1rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid #64748b;
+}
+
+.round-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #334155;
+}
+
+small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.player-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.generated-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.entry-card {
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+
+.entry-card p {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.vote-form {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.results {
+  margin-top: 1rem;
+}
+
+.hidden {
+  display: none;
+}
