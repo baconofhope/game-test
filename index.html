@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompt Match Party</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Prompt Match Party</h1>
+        <p>
+          Everyone sees an AI-generated image and writes a prompt to recreate it.
+          Then everyone votes for the closest match.
+        </p>
+      </header>
+
+      <section class="panel setup-panel" id="setupPanel">
+        <h2>Game Setup</h2>
+        <label>
+          Number of players
+          <input id="playerCount" type="number" min="2" max="8" value="3" />
+        </label>
+        <button id="startBtn">Start Round</button>
+      </section>
+
+      <section class="panel round-panel hidden" id="roundPanel">
+        <div class="round-meta">
+          <h2 id="roundTitle">Round 1</h2>
+          <button id="newRoundBtn" class="secondary">New Round</button>
+        </div>
+
+        <div class="images">
+          <article>
+            <h3>Target Image</h3>
+            <img id="targetImage" alt="Target AI-generated image" />
+            <small id="targetHint"></small>
+          </article>
+          <article>
+            <h3>Round Winner</h3>
+            <img id="winningImage" alt="Winning generated image" />
+            <small id="winningPrompt">No winner yet.</small>
+          </article>
+        </div>
+
+        <form id="promptForm">
+          <h3>Player Prompts</h3>
+          <div id="playerInputs" class="player-inputs"></div>
+          <button type="submit">Generate Entries</button>
+        </form>
+
+        <section id="gallerySection" class="results hidden">
+          <h3>Generated Entries</h3>
+          <p id="generationStatus" class="status"></p>
+          <p>Entries are anonymous while voting. Each player votes for the image that looks most like the target (no self-voting).</p>
+          <div id="generatedGallery" class="generated-gallery"></div>
+          <form id="voteForm" class="vote-form"></form>
+          <button id="voteBtn" class="hidden">Reveal Winner</button>
+        </section>
+
+        <section id="results" class="results hidden">
+          <h3>Round Results</h3>
+          <ol id="scoreboard"></ol>
+          <p id="winnerCallout"></p>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
