@@ -19,12 +19,17 @@ const winningImage = document.getElementById("winningImage");
 const winningPrompt = document.getElementById("winningPrompt");
 const targetHint = document.getElementById("targetHint");
 const roundTitle = document.getElementById("roundTitle");
+const gallerySection = document.getElementById("gallerySection");
+const generatedGallery = document.getElementById("generatedGallery");
+const voteForm = document.getElementById("voteForm");
+const voteBtn = document.getElementById("voteBtn");
 const results = document.getElementById("results");
 const scoreboard = document.getElementById("scoreboard");
 const winnerCallout = document.getElementById("winnerCallout");
 
 let round = 1;
 let secretPrompt = "";
+let generatedEntries = [];
 
 function hashCode(text) {
   let hash = 0;
@@ -40,23 +45,6 @@ function imageFromPrompt(prompt) {
   return `https://picsum.photos/seed/${seed}/600/600`;
 }
 
-function normalize(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function scoreSimilarity(guess, target) {
-  const gWords = new Set(normalize(guess));
-  const tWords = new Set(normalize(target));
-  const overlap = [...gWords].filter((word) => tWords.has(word)).length;
-  const coverage = overlap / Math.max(1, tWords.size);
-  const brevityPenalty = Math.min(1, normalize(guess).length / Math.max(3, tWords.size * 0.6));
-  return Math.round((coverage * 85 + brevityPenalty * 15) * 100);
-}
-
 function renderPlayerInputs(playerCount) {
   playerInputs.innerHTML = "";
   for (let i = 1; i <= playerCount; i += 1) {
@@ -67,16 +55,72 @@ function renderPlayerInputs(playerCount) {
   }
 }
 
+function resetRoundUi() {
+  winningImage.src = "";
+  winningPrompt.textContent = "No winner yet.";
+  gallerySection.classList.add("hidden");
+  generatedGallery.innerHTML = "";
+  voteForm.innerHTML = "";
+  voteBtn.classList.add("hidden");
+  results.classList.add("hidden");
+  scoreboard.innerHTML = "";
+  winnerCallout.textContent = "";
+  generatedEntries = [];
+}
+
 function createRound() {
   const index = Math.floor(Math.random() * promptSeeds.length);
   secretPrompt = promptSeeds[index];
   targetImage.src = imageFromPrompt(secretPrompt);
   targetHint.textContent = "Hint: Study colors, setting, and style details.";
-
-  winningImage.src = "";
-  winningPrompt.textContent = "No winner yet.";
-  results.classList.add("hidden");
   roundTitle.textContent = `Round ${round}`;
+  resetRoundUi();
+}
+
+function renderGeneratedEntries(entries) {
+  generatedGallery.innerHTML = entries
+    .map(
+      (entry) => `
+      <article class="entry-card">
+        <img src="${entry.imageUrl}" alt="Player ${entry.player} generated image" />
+        <p><strong>Player ${entry.player}</strong>: ${entry.prompt}</p>
+      </article>
+    `
+    )
+    .join("");
+}
+
+function renderVoteInputs(entries) {
+  voteForm.innerHTML = "";
+
+  entries.forEach((voter) => {
+    const label = document.createElement("label");
+    label.textContent = `Player ${voter.player} votes for:`;
+
+    const select = document.createElement("select");
+    select.id = `vote-${voter.player}`;
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Choose a player";
+    placeholder.selected = true;
+    placeholder.disabled = true;
+    select.appendChild(placeholder);
+
+    entries
+      .filter((candidate) => candidate.player !== voter.player)
+      .forEach((candidate) => {
+        const option = document.createElement("option");
+        option.value = String(candidate.player);
+        option.textContent = `Player ${candidate.player}`;
+        select.appendChild(option);
+      });
+
+    label.appendChild(select);
+    voteForm.appendChild(label);
+  });
+
+  voteBtn.classList.remove("hidden");
 }
 
 startBtn.addEventListener("click", () => {
@@ -102,29 +146,59 @@ newRoundBtn.addEventListener("click", () => {
 
 promptForm.addEventListener("submit", (event) => {
   event.preventDefault();
+
   const entries = [...playerInputs.querySelectorAll("textarea")].map((input, idx) => ({
     player: idx + 1,
     prompt: input.value.trim()
   }));
 
-  if (entries.some((e) => !e.prompt)) {
+  if (entries.some((entry) => !entry.prompt)) {
     alert("All players must submit a prompt.");
     return;
   }
 
-  const ranked = entries
-    .map((entry) => ({
-      ...entry,
-      score: scoreSimilarity(entry.prompt, secretPrompt)
-    }))
-    .sort((a, b) => b.score - a.score);
+  generatedEntries = entries.map((entry) => ({
+    ...entry,
+    imageUrl: imageFromPrompt(entry.prompt),
+    votes: 0
+  }));
+
+  renderGeneratedEntries(generatedEntries);
+  renderVoteInputs(generatedEntries);
+  gallerySection.classList.remove("hidden");
+  results.classList.add("hidden");
+});
+
+voteBtn.addEventListener("click", () => {
+  if (!generatedEntries.length) {
+    return;
+  }
+
+  const voteValues = generatedEntries.map((entry) => {
+    const select = document.getElementById(`vote-${entry.player}`);
+    return {
+      voter: entry.player,
+      votedFor: Number(select.value)
+    };
+  });
+
+  if (voteValues.some((vote) => Number.isNaN(vote.votedFor) || vote.votedFor < 1)) {
+    alert("Every player must cast a vote.");
+    return;
+  }
+
+  generatedEntries.forEach((entry) => {
+    entry.votes = voteValues.filter((vote) => vote.votedFor === entry.player).length;
+  });
+
+  const ranked = [...generatedEntries].sort((a, b) => b.votes - a.votes);
+  const winner = ranked[0];
 
   scoreboard.innerHTML = ranked
-    .map((r) => `<li>Player ${r.player}: ${r.score / 100}% similarity</li>`)
+    .map((entry) => `<li>Player ${entry.player}: ${entry.votes} vote(s)</li>`)
     .join("");
 
-  const winner = ranked[0];
-  winningImage.src = imageFromPrompt(winner.prompt);
+  winningImage.src = winner.imageUrl;
   winningPrompt.textContent = `Player ${winner.player} prompt: “${winner.prompt}”`;
   winnerCallout.textContent = `🏆 Player ${winner.player} wins this round!`;
   results.classList.remove("hidden");

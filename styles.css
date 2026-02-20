@@ -42,14 +42,16 @@ h3 {
 label,
 input,
 textarea,
-button {
+button,
+select {
   display: block;
   width: 100%;
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   margin-top: 0.4rem;
   border-radius: 8px;
   border: 1px solid #475569;
@@ -105,6 +107,32 @@ small {
 }
 
 .player-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.generated-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.entry-card {
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+
+.entry-card p {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.vote-form {
+  margin-top: 1rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.75rem;

@@ -12,7 +12,7 @@
         <h1>Prompt Match Party</h1>
         <p>
           Everyone sees an AI-generated image and writes a prompt to recreate it.
-          Closest match wins the round.
+          Then everyone votes for the closest match.
         </p>
       </header>
 
@@ -38,7 +38,7 @@
             <small id="targetHint"></small>
           </article>
           <article>
-            <h3>Winning Match</h3>
+            <h3>Round Winner</h3>
             <img id="winningImage" alt="Winning generated image" />
             <small id="winningPrompt">No winner yet.</small>
           </article>
@@ -47,8 +47,16 @@
         <form id="promptForm">
           <h3>Player Prompts</h3>
           <div id="playerInputs" class="player-inputs"></div>
-          <button type="submit">Score Round</button>
+          <button type="submit">Generate Entries</button>
         </form>
+
+        <section id="gallerySection" class="results hidden">
+          <h3>Generated Entries</h3>
+          <p>Each player now votes for the image that looks most like the target (no self-voting).</p>
+          <div id="generatedGallery" class="generated-gallery"></div>
+          <form id="voteForm" class="vote-form"></form>
+          <button id="voteBtn" class="hidden">Reveal Winner</button>
+        </section>
 
         <section id="results" class="results hidden">
           <h3>Round Results</h3>
