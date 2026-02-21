@@ -31,10 +31,25 @@ Open: <http://localhost:4173>
 2. Click **Start Round**.
 3. Every player enters a prompt.
 4. Click **Generate Entries**.
-5. Each player votes for the best match (cannot vote for self).
+5. The app shows anonymous image labels (Image A, Image B, ...), then each player votes for the best match (cannot vote for self).
 6. Click **Reveal Winner** to see results.
+
+## Real image generation API setup
+
+The frontend now tries to call `POST /api/generate-image` with this payload:
+
+```json
+{ "prompt": "your prompt text" }
+```
+
+Expected JSON response:
+
+```json
+{ "imageUrl": "https://..." }
+```
+
+If that API is unavailable, the app falls back to deterministic seeded preview images so the game still works.
 
 ## Notes
 
-- Image generation is simulated using seeded Picsum images for deterministic previews.
 - Voting determines the winner (no text-similarity scoring).

@@ -26,6 +26,9 @@ const voteBtn = document.getElementById("voteBtn");
 const results = document.getElementById("results");
 const scoreboard = document.getElementById("scoreboard");
 const winnerCallout = document.getElementById("winnerCallout");
+const generationStatus = document.getElementById("generationStatus");
+
+const IMAGE_API_ENDPOINT = "/api/generate-image";
 
 let round = 1;
 let secretPrompt = "";
@@ -40,9 +43,42 @@ function hashCode(text) {
   return Math.abs(hash);
 }
 
-function imageFromPrompt(prompt) {
+function fallbackImageFromPrompt(prompt) {
   const seed = hashCode(prompt);
   return `https://picsum.photos/seed/${seed}/600/600`;
+}
+
+function toImageLabel(index) {
+  return `Image ${String.fromCharCode(65 + index)}`;
+}
+
+async function generateImageFromPrompt(prompt) {
+  try {
+    const response = await fetch(IMAGE_API_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Generator API responded ${response.status}`);
+    }
+
+    const payload = await response.json();
+    if (!payload?.imageUrl || typeof payload.imageUrl !== "string") {
+      throw new Error("Generator API returned invalid payload");
+    }
+
+    return {
+      imageUrl: payload.imageUrl,
+      source: "api"
+    };
+  } catch (error) {
+    return {
+      imageUrl: fallbackImageFromPrompt(prompt),
+      source: "fallback"
+    };
+  }
 }
 
 function renderPlayerInputs(playerCount) {
@@ -65,14 +101,19 @@ function resetRoundUi() {
   results.classList.add("hidden");
   scoreboard.innerHTML = "";
   winnerCallout.textContent = "";
+  generationStatus.textContent = "";
   generatedEntries = [];
 }
 
-function createRound() {
+async function createRound() {
   const index = Math.floor(Math.random() * promptSeeds.length);
   secretPrompt = promptSeeds[index];
-  targetImage.src = imageFromPrompt(secretPrompt);
-  targetHint.textContent = "Hint: Study colors, setting, and style details.";
+  const targetImageResult = await generateImageFromPrompt(secretPrompt);
+  targetImage.src = targetImageResult.imageUrl;
+  targetHint.textContent =
+    targetImageResult.source === "api"
+      ? "Target generated via configured image API."
+      : "Using seeded fallback image (API not configured/reachable).";
   roundTitle.textContent = `Round ${round}`;
   resetRoundUi();
 }
@@ -82,8 +123,8 @@ function renderGeneratedEntries(entries) {
     .map(
       (entry) => `
       <article class="entry-card">
-        <img src="${entry.imageUrl}" alt="Player ${entry.player} generated image" />
-        <p><strong>Player ${entry.player}</strong>: ${entry.prompt}</p>
+        <img src="${entry.imageUrl}" alt="${entry.imageLabel} generated image" />
+        <p><strong>${entry.imageLabel}</strong></p>
       </article>
     `
     )
@@ -102,7 +143,7 @@ function renderVoteInputs(entries) {
 
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = "Choose a player";
+    placeholder.textContent = "Choose an image";
     placeholder.selected = true;
     placeholder.disabled = true;
     select.appendChild(placeholder);
@@ -112,7 +153,7 @@ function renderVoteInputs(entries) {
       .forEach((candidate) => {
         const option = document.createElement("option");
         option.value = String(candidate.player);
-        option.textContent = `Player ${candidate.player}`;
+        option.textContent = candidate.imageLabel;
         select.appendChild(option);
       });
 
@@ -123,7 +164,7 @@ function renderVoteInputs(entries) {
   voteBtn.classList.remove("hidden");
 }
 
-startBtn.addEventListener("click", () => {
+startBtn.addEventListener("click", async () => {
   const count = Number(playerCountInput.value);
   if (Number.isNaN(count) || count < 2 || count > 8) {
     alert("Choose between 2 and 8 players.");
@@ -131,20 +172,28 @@ startBtn.addEventListener("click", () => {
   }
 
   renderPlayerInputs(count);
-  createRound();
+  startBtn.disabled = true;
+  startBtn.textContent = "Preparing round...";
+  await createRound();
+  startBtn.disabled = false;
+  startBtn.textContent = "Start Round";
   setupPanel.classList.add("hidden");
   roundPanel.classList.remove("hidden");
 });
 
-newRoundBtn.addEventListener("click", () => {
+newRoundBtn.addEventListener("click", async () => {
   round += 1;
-  createRound();
+  newRoundBtn.disabled = true;
+  newRoundBtn.textContent = "Generating target...";
+  await createRound();
   [...playerInputs.querySelectorAll("textarea")].forEach((el) => {
     el.value = "";
   });
+  newRoundBtn.disabled = false;
+  newRoundBtn.textContent = "New Round";
 });
 
-promptForm.addEventListener("submit", (event) => {
+promptForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const entries = [...playerInputs.querySelectorAll("textarea")].map((input, idx) => ({
@@ -157,16 +206,34 @@ promptForm.addEventListener("submit", (event) => {
     return;
   }
 
-  generatedEntries = entries.map((entry) => ({
-    ...entry,
-    imageUrl: imageFromPrompt(entry.prompt),
-    votes: 0
-  }));
+  promptForm.querySelector('button[type="submit"]').disabled = true;
+  generationStatus.textContent = "Generating images from player prompts...";
+
+  const generated = await Promise.all(
+    entries.map(async (entry, index) => {
+      const result = await generateImageFromPrompt(entry.prompt);
+      return {
+        ...entry,
+        imageLabel: toImageLabel(index),
+        imageUrl: result.imageUrl,
+        source: result.source,
+        votes: 0
+      };
+    })
+  );
+
+  generatedEntries = generated;
+
+  const usedFallback = generatedEntries.some((entry) => entry.source === "fallback");
+  generationStatus.textContent = usedFallback
+    ? "Some/all images used seeded fallback because the API was unavailable."
+    : "All images generated by API.";
 
   renderGeneratedEntries(generatedEntries);
   renderVoteInputs(generatedEntries);
   gallerySection.classList.remove("hidden");
   results.classList.add("hidden");
+  promptForm.querySelector('button[type="submit"]').disabled = false;
 });
 
 voteBtn.addEventListener("click", () => {
@@ -177,7 +244,6 @@ voteBtn.addEventListener("click", () => {
   const voteValues = generatedEntries.map((entry) => {
     const select = document.getElementById(`vote-${entry.player}`);
     return {
-      voter: entry.player,
       votedFor: Number(select.value)
     };
   });
@@ -195,11 +261,11 @@ voteBtn.addEventListener("click", () => {
   const winner = ranked[0];
 
   scoreboard.innerHTML = ranked
-    .map((entry) => `<li>Player ${entry.player}: ${entry.votes} vote(s)</li>`)
+    .map((entry) => `<li>${entry.imageLabel}: ${entry.votes} vote(s)</li>`)
     .join("");
 
   winningImage.src = winner.imageUrl;
-  winningPrompt.textContent = `Player ${winner.player} prompt: “${winner.prompt}”`;
-  winnerCallout.textContent = `🏆 Player ${winner.player} wins this round!`;
+  winningPrompt.textContent = `${winner.imageLabel} was generated by Player ${winner.player}. Prompt: “${winner.prompt}”`;
+  winnerCallout.textContent = `🏆 ${winner.imageLabel} wins this round!`;
   results.classList.remove("hidden");
 });

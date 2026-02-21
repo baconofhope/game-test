@@ -112,6 +112,13 @@ small {
   gap: 0.75rem;
 }
 
+
+.status {
+  margin: 0.35rem 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .generated-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
