@@ -10,20 +10,26 @@ A lightweight browser game prototype:
 
 ## How to run
 
-### Option 1 (recommended): Python static server
+### 1) Set your OpenAI API key
+
+```bash
+export OPENAI_API_KEY="your_api_key_here"
+```
+
+Optional:
+
+```bash
+export OPENAI_IMAGE_MODEL="gpt-image-1"
+```
+
+### 2) Start the app server
 
 ```bash
 cd /workspace/game-test
-python3 -m http.server 4173
+npm start
 ```
 
 Open: <http://localhost:4173>
-
-### Option 2: VS Code Live Server (if you use VS Code)
-
-- Open this folder in VS Code.
-- Right-click `index.html`.
-- Click **Open with Live Server**.
 
 ## Gameplay quick start
 
@@ -34,21 +40,21 @@ Open: <http://localhost:4173>
 5. The app shows anonymous image labels (Image A, Image B, ...), then each player votes for the best match (cannot vote for self).
 6. Click **Reveal Winner** to see results.
 
-## Real image generation API setup
+## API behavior
 
-The frontend now tries to call `POST /api/generate-image` with this payload:
+The frontend calls `POST /api/generate-image` with:
 
 ```json
 { "prompt": "your prompt text" }
 ```
 
-Expected JSON response:
+The server proxies the request to OpenAI image generation and returns:
 
 ```json
-{ "imageUrl": "https://..." }
+{ "imageUrl": "https://... or data:image/png;base64,..." }
 ```
 
-If that API is unavailable, the app falls back to deterministic seeded preview images so the game still works.
+If OpenAI is unavailable (or `OPENAI_API_KEY` is not configured), the UI falls back to deterministic seeded preview images so the game remains playable.
 
 ## Notes
 
